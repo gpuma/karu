@@ -6,60 +6,64 @@ import logging
 import threading
 import time
 
-class MySocket(object):
-    def __init__(self, host, port):
-        #logging
-        logging.basicConfig(level=logging.INFO)
-        self.logger=logging.getLogger()
+#todo: might need refactoring
+def log(msg):
+    #will always get a reference to an existing logger
+    #with the name indicated
+    logger=logging.getLogger("log")
+    logger.info(msg)
 
-        self.logger.info("Initializing socket")
+class MySocket(object):
+    def __init__(self, host, port, maxlen):
+        log("Initializing socket")
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_address = (host, port)
         self.max_connections = 5
+        self.MAXLEN = maxlen
         #this is used in Loops to indicate
         #if the program should stop or keep listening
         self.listen=True
 
     def start_listening(self):
-        self.logger.info("Starting up on %s port %s" % self.server_address)
+        log("Starting up on %s port %s" % self.server_address)
         self.sock.bind(self.server_address)
         self.sock.listen(self.max_connections)
 
         #main loop
         while self.listen:
-            self.logger.info('waiting for a connection')
+            log('waiting for a connection')
             clientsocket, address= self.sock.accept()
-            self.logger.info( 'connection from', address)
+            log( 'connection from %s at %s '% address)
             self.process_connection(clientsocket, address)
-            self.logger.info('esto no aparecera si es bloqueante')
+            log('finished processing connection :)')
 
-        self.logger.info('listening stopped!')
+        log('listening stopped!')
 
-    def process_connection(self, connection):
+    def process_connection(self, connection, addr):
         try:
             #todo: not sure about this shit!
-            while self.listen:
-                data = connection.recv(16)
-                self.logger.info( 'received "%s"' % data)
+            while True:
+                data = connection.recv(self.MAXLEN)
+                log( 'received "%s"' % data)
                 if data:
-                    self.logger.info('sending data back to the client')
+                    log('sending data back to the client')
                     connection.sendall(data)
                 else:
-                    self.logger.info( 'no more data from', client_address)
+                    log( 'no more data from %s at %s' % addr)
                     break
         except KeyboardInterrupt:
-            self.logger.info('Interrupted!')
+            log('Interrupted!')
         finally:
             connection.close()
 
     def stop_listening(self):
-        self.logger.info('stopping listening on connections...')
+        log('stopping listening on connections...')
         self.listen=False
 
 
 if __name__ == '__main__':
-    s=MySocket('localhost',10000)
-    t=threading.Thread(target=s.start_listening)
-    t.start()
-    time.sleep(5)
-    s.stop_listening()
+    # setting logging message level
+    logging.basicConfig(level=logging.INFO)
+    s=MySocket('localhost',10000, 64)
+    #t=threading.Thread(target=s.start_listening)
+    s.start_listening()
