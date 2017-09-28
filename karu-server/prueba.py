@@ -31,7 +31,7 @@ class MySocket(object):
 
         #main loop
         while self.listen:
-            log('waiting for a connection')
+            log('waiting for a new connection')
             clientsocket, address= self.sock.accept()
             log( 'connection from %s at %s '% address)
             self.process_connection(clientsocket, address)
@@ -41,20 +41,35 @@ class MySocket(object):
 
     def process_connection(self, connection, addr):
         try:
+            msg = ""
             #todo: not sure about this shit!
             while True:
                 data = connection.recv(self.MAXLEN)
-                log( 'received "%s"' % data)
-                if data:
-                    log('sending data back to the client')
-                    connection.sendall(data)
-                else:
-                    log( 'no more data from %s at %s' % addr)
+                msg+=data
+                log('received "%s"' % data)
+                if MySocket.msg_received(msg):
+                    log('no more data from %s at %s' % addr)
+                    log('the message is "%s"' % msg)
+                    log('sending ACK to client...')
+                    #todo: put this into a variable
+                    connection.sendall("0")
                     break
+
         except KeyboardInterrupt:
             log('Interrupted!')
         finally:
             connection.close()
+
+    #checks the length of message and returns True if
+    #it's been delivered completely. The msg would be
+    #in the format: "7,message"
+    @staticmethod
+    def msg_received(msg):
+        #we wait until we get a comma because that's the separator
+        if not ',' in msg:
+            return False
+        split = msg.split(',')
+        return int(split[0]) == len(split[1])
 
     def stop_listening(self):
         log('stopping listening on connections...')
