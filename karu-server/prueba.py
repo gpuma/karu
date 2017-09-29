@@ -48,11 +48,13 @@ class MySocket(object):
                 msg+=data
                 log('received "%s"' % data)
                 if MySocket.msg_received(msg):
+                    processed_msg = MySocket.process_msg(msg)
                     log('no more data from %s at %s' % addr)
-                    log('the message is "%s"' % msg)
+                    log('the full message is "%s"' % msg)
+                    log('the extracted message is "%s"' % processed_msg)
                     log('sending ACK to client...')
                     log('pressing "playpause"...')
-                    pyautogui.press('playpause')
+                    pyautogui.press(processed_msg)
                     #todo: put this into a variable
                     connection.sendall("0")
 
@@ -62,6 +64,11 @@ class MySocket(object):
             log('Interrupted!')
         finally:
             connection.close()
+
+    #removes the length indicator from the received message
+    @staticmethod
+    def process_msg(msg):
+        return msg.split(',')[1]
 
     #checks the length of message and returns True if
     #it's been delivered completely. The msg would be
