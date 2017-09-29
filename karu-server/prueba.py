@@ -1,4 +1,4 @@
-#import pyautogui
+import pyautogui
 import socket
 import logging
 #import sys
@@ -51,8 +51,11 @@ class MySocket(object):
                     log('no more data from %s at %s' % addr)
                     log('the message is "%s"' % msg)
                     log('sending ACK to client...')
+                    log('pressing "playpause"...')
+                    pyautogui.press('playpause')
                     #todo: put this into a variable
                     connection.sendall("0")
+
                     break
 
         except KeyboardInterrupt:
@@ -79,6 +82,6 @@ class MySocket(object):
 if __name__ == '__main__':
     # setting logging message level
     logging.basicConfig(level=logging.INFO)
-    s=MySocket('localhost',10000, 64)
+    s=MySocket('',10000, 64)
     #t=threading.Thread(target=s.start_listening)
     s.start_listening()
