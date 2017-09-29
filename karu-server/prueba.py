@@ -39,6 +39,7 @@ class MySocket(object):
 
         log('listening stopped!')
 
+    #todo: refactor this shit!
     def process_connection(self, connection, addr):
         try:
             msg = ""
@@ -47,18 +48,21 @@ class MySocket(object):
                 data = connection.recv(self.MAXLEN)
                 msg+=data
                 log('received "%s"' % data)
-                if MySocket.msg_received(msg):
-                    processed_msg = MySocket.process_msg(msg)
-                    log('no more data from %s at %s' % addr)
-                    log('the full message is "%s"' % msg)
-                    log('the extracted message is "%s"' % processed_msg)
-                    log('sending ACK to client...')
-                    log('pressing "playpause"...')
-                    pyautogui.press(processed_msg)
-                    #todo: put this into a variable
-                    connection.sendall("0")
-
-                    break
+                if not MySocket.msg_received(msg):
+                    pass
+                processed_msg = MySocket.process_msg(msg)
+                if processed_msg is None:
+                    log('unsupported message type!')
+                    return
+                log('no more data from %s at %s' % addr)
+                log('the full message is "%s"' % msg)
+                log('the extracted message is "%s"' % processed_msg)
+                log('sending ACK to client...')
+                log('pressing "playpause"...')
+                pyautogui.press(processed_msg)
+                #todo: put this into a variable
+                connection.sendall("0")
+                return
 
         except KeyboardInterrupt:
             log('Interrupted!')
@@ -68,7 +72,10 @@ class MySocket(object):
     #removes the length indicator from the received message
     @staticmethod
     def process_msg(msg):
-        return msg.split(',')[1]
+        extracted_msg = msg.split(',')[1]
+        if extracted_msg not in ['playpause','prevtrack', 'nexttrack', 'volumeup', 'volumedown' ]:
+            return None
+        return extracted_msg
 
     #checks the length of message and returns True if
     #it's been delivered completely. The msg would be
